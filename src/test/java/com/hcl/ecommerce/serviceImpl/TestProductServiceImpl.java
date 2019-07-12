@@ -1,11 +1,11 @@
 package com.hcl.ecommerce.serviceImpl;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -38,66 +38,114 @@ public class TestProductServiceImpl {
 	@Mock
 	ProductRepo productRepo;
 
-	@Test(expected=UserNotFoundException.class)
-	public void testaddProduct() throws Exception {
-		ProductDto productDto = new ProductDto();
-		productDto.setProductPrice(new Double(10));
-		productDto.setProductQuantity(1L);
-		Product product = new Product();
-		product.setProductId(1L);
-		product.setProductQuantity(1L);
-		product.setProductPrice(new Double(10));
-		product.setProductName("productName");
-		Category catogery = new Category();
-		catogery.setCategoryId(1L);
-		product.setCategory(catogery);
-		User user = new User();
-		user.setStatus(true);
-		user.setRole(Role.SELLER);
+	@Test
+	public void addProdutTest() throws Exception {
+		ProductDto productRequestDto = getProductRequestDto();
+		Category category = getCategory();
+		User user = getUser();
 		Mockito.when(userRepo.findById(Mockito.anyLong())).thenReturn(Optional.of(user));
-		Mockito.when(productRepo.save(Mockito.anyObject())).thenReturn(product);
-		Mockito.when(categoryRepo.findById(Mockito.anyLong())).thenReturn(Optional.of(catogery));
+		Mockito.when(categoryRepo.findById(Mockito.anyLong())).thenReturn(Optional.of(category));
+		Assert.assertEquals("Product added succesfully", productServiceImpl.addProduct(productRequestDto));
 
-		String str = productServiceImpl.addProduct(productDto);
-		assertEquals(new UserNotFoundException("User not found"), str);
 	}
-	
-	@Test
-	public void testproducts() {
-		List<Product> li = new ArrayList<>();
-		Product product = new Product();
-		product.setProductId(1L);
-		product.setProductQuantity(1L);
-		li.add(product);
-		Mockito.when(productRepo.findAll()).thenReturn(li);
-		List<Product> li1=productServiceImpl.products();
-		assertEquals(li1, li);
+
+	@Test(expected = UserNotFoundException.class)
+	public void addProduct1_Test() throws Exception {
+		ProductDto productRequestDto = getProductRequestDto();
+		productRequestDto.setUserId(20L);
+		productServiceImpl.addProduct(productRequestDto);
 	}
-	
-	@Test
-	public void testproductsByCategory() {
-		List<Product> li = new ArrayList<>();
-		Product product = new Product();
-		product.setProductId(1L);
-		product.setProductQuantity(1L);
-		li.add(product);
-		Mockito.when(productRepo.getByProduct(Mockito.anyLong())).thenReturn(li);
-		List<Product> li1=productServiceImpl.productsByCategory(1L);
-		assertEquals(li1, li);
+
+	@Test(expected = Exception.class)
+	public void addProduct2_Test() throws Exception {
+		User user = getUser();
+		user.setRole(Role.BUYER);
+		ProductDto productRequestDto = getProductRequestDto();
+		Mockito.when(userRepo.findById(Mockito.anyLong())).thenReturn(Optional.of(user));
+		productServiceImpl.addProduct(productRequestDto);
 	}
-	
+
+	@Test(expected = Exception.class)
+	public void addProduct3_Test() throws Exception {
+		ProductDto productRequestDto = getProductRequestDto();
+		productRequestDto.setCategoryId(234L);
+		User user = getUser();
+		Mockito.when(userRepo.findById(Mockito.anyLong())).thenReturn(Optional.of(user));
+		productServiceImpl.addProduct(productRequestDto);
+	}
+
+	@Test(expected = Exception.class)
+	public void addProduct4_Test() throws Exception {
+		ProductDto productRequestDto = getProductRequestDto();
+		productRequestDto.setProductPrice(0L);
+		User user = getUser();
+		Mockito.when(userRepo.findById(Mockito.anyLong())).thenReturn(Optional.of(user));
+		Assert.assertEquals("Invalid price", productServiceImpl.addProduct(productRequestDto));
+	}
+
+	@Test(expected = Exception.class)
+	public void addProduct5_Test() throws Exception {
+		ProductDto productRequestDto = getProductRequestDto();
+		productRequestDto.setProductQuantity(0L);
+		User user = getUser();
+		Mockito.when(userRepo.findById(Mockito.anyLong())).thenReturn(Optional.of(user));
+		Assert.assertEquals("Invalid quantity", productServiceImpl.addProduct(productRequestDto));
+	}
+
 	@Test
-	public void testproductsByName() {
-		List<Product> li = new ArrayList<>();
-		Product product = new Product();
-		product.setProductId(1L);
-		product.setProductQuantity(1L);
-		product.setProductName("name");
-		li.add(product);
-		Mockito.when(productRepo.findByProductNameContainingIgnoreCase(Mockito.anyString())).thenReturn(li);
-		List<Product> li1=productServiceImpl.productsByName("name");
-		assertEquals(li1, li);	
-		
+	public void productsTest() {
+		List<Product> productLists = new ArrayList<Product>();
+		Product product = getProduct();
+		productLists.add(product);
+		Mockito.when(productRepo.findAll()).thenReturn(productLists);
+		Assert.assertEquals(productLists.size(), productServiceImpl.products().size());
+	}
+
+	@Test
+	public void productsBycategory_Test() {
+		Category category = getCategory();
+		List<Product> productLists = new ArrayList<Product>();
+		Product product = getProduct();
+		productLists.add(product);
+		Mockito.when(productRepo.getByProduct(Mockito.anyLong())).thenReturn(productLists);
+		Assert.assertEquals(productLists.size(),
+				productServiceImpl.productsByCategory(category.getCategoryId()).size());
+	}
+
+	@Test
+	public void productsByNameTest() {
+		List<Product> productLists = new ArrayList<Product>();
+		Product product = getProduct();
+		productLists.add(product);
+		Mockito.when(productRepo.findByProductNameContainingIgnoreCase(Mockito.anyString())).thenReturn(productLists);
+		Assert.assertEquals(productLists.size(), productServiceImpl.productsByName("sam").size());
+	}
+
+	public ProductDto getProductRequestDto() {
+		ProductDto productRequestDto = new ProductDto("Samsung", 23490.00, 20L, 1L, 3L);
+		return productRequestDto;
+	}
+
+	public Product getProduct() {
+		Product product = new Product(1L, "Samsung", 23490.00, 20L, 3L, new Date(), null);
+		return product;
+	}
+
+	public Category getCategory() {
+		Category category = new Category(1L, "Laptops", null);
+		return category;
+	}
+
+	public User getUser() {
+		User user = new User();
+		user.setAddress("address");
+		user.setName("name");
+		user.setPassword("password");
+		user.setRole(Role.SELLER);
+		user.setStatus(true);
+		user.setUserId(1L);
+		user.setUserName("userName");
+		return user;
 	}
 
 }

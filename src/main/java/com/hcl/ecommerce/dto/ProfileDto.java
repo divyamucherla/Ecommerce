@@ -9,6 +9,14 @@ public class ProfileDto {
 	@NotEmpty(message = "Address cannot be empty")
 	private String address;
 
+	public ProfileDto(String string, String string2) {
+		// TODO Auto-generated constructor stub
+	}
+
+	public ProfileDto() {
+		// TODO Auto-generated constructor stub
+	}
+
 	public String getName() {
 		return name;
 	}
